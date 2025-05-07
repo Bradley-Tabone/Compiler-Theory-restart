@@ -1,11 +1,11 @@
-# ast_nodes.py - AST Node Definitions for PArL
+# ast_nodes.py - AST node definitions for PArL
 
 class ASTNode:
     pass
 
 class ASTProgram(ASTNode):
-    def __init__(self, functions):
-        self.functions = functions
+    def __init__(self, declarations):
+        self.declarations = declarations
 
 class ASTFunctionDeclaration(ASTNode):
     def __init__(self, name, parameters, return_type, body):
@@ -15,18 +15,23 @@ class ASTFunctionDeclaration(ASTNode):
         self.body = body
 
 class ASTParameter(ASTNode):
-    def __init__(self, name, type_):
+    def __init__(self, name, type):
         self.name = name
-        self.type = type_
+        self.type = type
 
 class ASTBlock(ASTNode):
     def __init__(self, statements):
         self.statements = statements
 
 class ASTVariableDeclaration(ASTNode):
-    def __init__(self, name, type_, value):
+    def __init__(self, name, type, value):
         self.name = name
-        self.type = type_
+        self.type = type
+        self.value = value
+
+class ASTAssignment(ASTNode):
+    def __init__(self, name, value):
+        self.name = name
         self.value = value
 
 class ASTReturnStatement(ASTNode):
@@ -34,7 +39,7 @@ class ASTReturnStatement(ASTNode):
         self.expression = expression
 
 class ASTIfStatement(ASTNode):
-    def __init__(self, condition, then_block, else_block=None):
+    def __init__(self, condition, then_block, else_block):
         self.condition = condition
         self.then_block = then_block
         self.else_block = else_block
@@ -51,10 +56,9 @@ class ASTForStatement(ASTNode):
         self.update = update
         self.body = body
 
-class ASTAssignment(ASTNode):
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
+class ASTExpressionStatement(ASTNode):
+    def __init__(self, expression):
+        self.expression = expression
 
 class ASTBuiltinCall(ASTNode):
     def __init__(self, name, args):
@@ -65,10 +69,6 @@ class ASTFunctionCall(ASTNode):
     def __init__(self, name, args):
         self.name = name
         self.args = args
-
-class ASTExpressionStatement(ASTNode):
-    def __init__(self, expression):
-        self.expression = expression
 
 class ASTBinaryOp(ASTNode):
     def __init__(self, operator, left, right):
@@ -89,3 +89,7 @@ class ASTCast(ASTNode):
 class ASTLiteral(ASTNode):
     def __init__(self, value):
         self.value = value
+
+class ASTArrayLiteral(ASTNode):
+    def __init__(self, elements):
+        self.elements = elements

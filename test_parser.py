@@ -49,8 +49,8 @@ def print_ast(node, indent=0):
 
     if isinstance(node, ASTProgram):
         print(pad + "Program")
-        for fn in node.functions:
-            print_ast(fn, indent + 1)
+        for decl in node.declarations:
+            print_ast(decl, indent + 1)
 
     elif isinstance(node, ASTFunctionDeclaration):
         print(pad + f"Function {node.name} -> {node.return_type}")
@@ -133,6 +133,11 @@ def print_ast(node, indent=0):
 
     elif isinstance(node, ASTLiteral):
         print(pad + f"Literal {node.value}")
+
+    elif isinstance(node, ASTArrayLiteral):
+        print(pad + "Array Literal")
+        for el in node.elements:
+            print_ast(el, indent + 1)
 
     else:
         print(pad + f"(Unknown node: {type(node).__name__})")

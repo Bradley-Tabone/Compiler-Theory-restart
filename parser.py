@@ -32,14 +32,21 @@ class Parser:
 
     def parse_program(self):
         functions = []
+        statements = []
+
         while self.peek().type != TokenType.EOF:
-            functions.append(self.parse_function())
-        return ast.ASTProgram(functions)
+            if self.peek().lexeme == 'fun':
+                functions.append(self.parse_function())
+            elif self.peek().lexeme == 'let':
+                statements.append(self.parse_variable_decl())
+            else:
+                raise ParserError(f"Unexpected top-level token {self.peek().lexeme} at line {self.peek().line}")
+
+        return ast.ASTProgram(functions + statements)
 
     def parse_function(self):
-        tok = self.expect(TokenType.KEYWORD)
-        if tok.lexeme != 'fun':
-            raise ParserError(f"Expected 'fun', got '{tok.lexeme}' at line {tok.line}")
+        print(f"[DEBUG] Parsing function at line {self.peek().line}")
+        self.expect('fun')
         name = self.expect(TokenType.IDENTIFIER)
         self.expect('(')
         params = self.parse_parameters()
@@ -54,6 +61,7 @@ class Parser:
         if self.peek().lexeme == ')':
             return params
         while True:
+            print(f"[DEBUG] Parsing parameter at line {self.peek().line}")
             name = self.expect(TokenType.IDENTIFIER)
             self.expect(':')
             typ = self.expect(TokenType.KEYWORD)
@@ -67,12 +75,14 @@ class Parser:
         self.expect('{')
         statements = []
         while self.peek().lexeme != '}':
+            print(f"[DEBUG] Parsing statement at line {self.peek().line}")
             statements.append(self.parse_statement())
         self.expect('}')
         return ast.ASTBlock(statements)
 
     def parse_statement(self):
         tok = self.peek()
+        print(f"[DEBUG] Entering parse_statement with token {tok.lexeme} at line {tok.line}")
         if tok.type == TokenType.KEYWORD:
             if tok.lexeme == 'let':
                 return self.parse_variable_decl()
@@ -93,6 +103,7 @@ class Parser:
         raise ParserError(f"Unexpected token {tok.lexeme} at line {tok.line}")
 
     def parse_variable_decl(self):
+        print(f"[DEBUG] Parsing variable declaration at line {self.peek().line}")
         self.expect('let')
         name = self.expect(TokenType.IDENTIFIER)
         self.expect(':')
@@ -103,6 +114,7 @@ class Parser:
         return ast.ASTVariableDeclaration(name.lexeme, typ.lexeme, expr)
 
     def parse_assignment_statement(self):
+        print(f"[DEBUG] Parsing assignment statement at line {self.peek().line}")
         name = self.expect(TokenType.IDENTIFIER)
         self.expect('=')
         expr = self.parse_expression()
@@ -116,6 +128,7 @@ class Parser:
         return ast.ASTAssignment(name.lexeme, expr)
 
     def parse_return(self):
+        print(f"[DEBUG] Parsing return statement at line {self.peek().line}")
         self.expect('return')
         expr = self.parse_expression()
         self.expect(';')
@@ -239,6 +252,7 @@ class Parser:
 
     def parse_primary(self):
         tok = self.peek()
+        print(f"[DEBUG] Entering parse_primary with token {tok.type}: {tok.lexeme} at line {tok.line}")
         if tok.lexeme == '(':
             self.advance()
             expr = self.parse_expression()
@@ -270,7 +284,19 @@ class Parser:
                 return ast.ASTFunctionCall(identifier.lexeme, args)
             return ast.ASTLiteral(identifier.lexeme)
         if tok.type == TokenType.BUILTIN:
-            return ast.ASTLiteral(self.advance().lexeme)
+            name = self.advance()
+            if self.peek().lexeme == '(':
+                self.advance()
+                args = []
+                if self.peek().lexeme != ')':
+                    while True:
+                        args.append(self.parse_expression())
+                        if self.peek().lexeme == ')':
+                            break
+                        self.expect(',')
+                self.expect(')')
+                return ast.ASTFunctionCall(name.lexeme, args)
+            return ast.ASTLiteral(name.lexeme)
         if tok.type in (TokenType.INT_LITERAL, TokenType.FLOAT_LITERAL, TokenType.BOOLEAN_LITERAL, TokenType.COLOUR_LITERAL):
             return ast.ASTLiteral(self.advance().lexeme)
         if tok.type == TokenType.KEYWORD and tok.lexeme in ('true', 'false'):
