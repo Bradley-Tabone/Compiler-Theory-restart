@@ -1,38 +1,87 @@
 from lexer import Lexer
 from parser import Parser
 from ast_nodes import *
+from semantic_analysis import *
 
 # === Sample PArL program to test the parser ===
 source_code = """
-fun fullTest(x: int, y: float, z: bool, c: colour) -> int {
-    let result: int = x + __random_int(5);
-    let red: colour = #ff0000;
-    let isValid: bool = false;
-    let pi: float = 3.14;
-    let width: int = __width;
-    let height: int = __height;
-    let readVal: int = __read(1, 2);
-
-    if (result > 0 and isValid or not isValid) {
-        __print(result);
-        __write(1, 2, 255);
-        __write_box(1, 1, 3, 3, 0);
-        __delay(10);
-    }
-
-    for (let i: int = 0; i < 5; i = i + 1) {
-        let temp: float = 0.0;
-        __print(i);
-    }
-
-    while (width > 0) {
-        width = width - 1;
-    }
-
-    return result;
+// This function takes two integers and return true if
+// the first argument is greater than the second.
+// Otherwise it returns false.
+fun XGreaterY(x: int, y: int) -> bool {
+    let ans: bool = true;
+    if (y > x) { ans = false; }
+    return ans;
 }
 
-let values: int = [1, 2, 3, 4];
+// Same functionality as function above but using less code
+fun XGreaterY_2(x: int, y: int) -> bool {
+    return x > y;
+}
+
+// Allocates memory space for 4 variables (x, y, t0, t1).
+fun AverageOfTwo(x: int, y: int) -> float {
+    let t0: int = x + y;
+    let t1: float = t0 / 2 as float; // casting expression to a float
+    return t1;
+}
+
+// Same functionality as function above but using less code.
+// Note the use of the brackets in the expression following
+// the return statement. Allocates space for 2 variables.
+fun AverageOfTwo_2(x: int, y: int) -> float {
+    return (x + y) / 2 as float;
+}
+
+// Takes two integers and returns the max of the two.
+fun Max(x: int, y: int) -> int {
+    let m: int = x;
+    if (y > x) { m = y; }
+    return m;
+}
+
+// Writes to the console with some custom delay
+__write 10, 14, #00ff00;
+__delay 100;
+__write_box 10, 14, 2, 2, #0000ff;
+
+for (let i: int = 0; i < 10; i = i + 1) {
+    __print(i);
+}
+
+fun Race(p1_c: colour, p2_c: colour, score_max: int) -> int {
+    let p1_score: int = 0;
+    let p2_score: int = 0;
+
+    while ((p1_score < score_max) and (p2_score < score_max)) {
+        let p1_toss: int = __randi 1000;
+        let p2_toss: int = __randi 1000;
+
+        if (p1_toss > p2_toss) {
+            p1_score = p1_score + 1;
+            __write 1, p1_score, p1_c;
+        } else {
+            p2_score = p2_score + 1;
+            __write 2, p2_score, p2_c;
+        }
+
+        __delay 100;
+    }
+
+    if (p2_score > p1_score) {
+        return 2;
+    }
+    return 1;
+}
+
+// Execution (program entry point) starts at the first statement
+// that is not a function declaration. This should go in the .main
+// function of ParIR.
+let c1: colour = #00ff00;  // green
+let c2: colour = #0000ff;  // blue
+let m: int = __height;  // the height (y-values) of the pad
+let w: int = Race(c1, c2, m);  // call function Race
+__print w;  // prints value of expression to VM logs
 """
 
 # === Step 1: Run the lexer ===
@@ -43,7 +92,11 @@ tokens = lexer.tokenize()
 parser = Parser(tokens)
 ast = parser.parse_program()
 
-# === Step 3: Print the AST ===
+# === Step 3: Run the semantic analysis ===
+semantic_analyzer = SemanticAnalyzer()
+semantic_analyzer.analyze(ast)
+
+# === Step 4: Print the AST ===
 def print_ast(node, indent=0):
     pad = '  ' * indent
 
@@ -142,5 +195,5 @@ def print_ast(node, indent=0):
     else:
         print(pad + f"(Unknown node: {type(node).__name__})")
 
-# === Execute ===
+# === Execute the printing for the valid AST ===
 print_ast(ast)
